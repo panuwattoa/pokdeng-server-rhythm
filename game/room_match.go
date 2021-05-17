@@ -141,7 +141,7 @@ func (room *PokdengRoom) MatchJoin(ctx context.Context, logger runtime.Logger, d
 		}
 
 	}
-	if users, err := nk.UsersGetId(ctx, users); err != nil {
+	if users, err := nk.UsersGetId(ctx, users, nil); err != nil {
 		// Handle error.
 	} else {
 
