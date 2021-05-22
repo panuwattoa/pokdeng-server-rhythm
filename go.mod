@@ -1,6 +1,6 @@
 module pokdeng-server
 
-go 1.14
+go 1.16
 
 require (
 	github.com/heroiclabs/nakama-common v1.14.0
