@@ -4,15 +4,19 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"math/rand"
 	"pokdeng-server/config"
 	"pokdeng-server/game"
 	"pokdeng-server/systems"
+	"time"
 
 	"github.com/heroiclabs/nakama-common/runtime"
 )
 
 func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, initializer runtime.Initializer) error {
 	logger.Info("module loaded")
+	rand.Seed(time.Now().UnixNano())
+
 	createRoomMatch := func(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule) (runtime.Match, error) {
 		return &game.PokdengRoom{}, nil
 	}

@@ -14,3 +14,8 @@ type VedioAds struct {
 	Number    uint `json:"videoads"`
 	ResetTime uint `json:"resettime"`
 }
+
+type UserVideoAds struct {
+	NumWatch uint   `json:"num_watch"`
+	Date     string `json:"Date"`
+}

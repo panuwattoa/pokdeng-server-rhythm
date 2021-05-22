@@ -5,13 +5,17 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"math/rand"
 	"pokdeng-server/config"
 	"sort"
 	"strconv"
+	"time"
 
 	"github.com/heroiclabs/nakama-common/api"
 	"github.com/heroiclabs/nakama-common/runtime"
 )
+
+const RFC3339FullDate = "2006-01-02"
 
 var IAPProductList map[string]Product
 var VedioAdsCong VedioAds
@@ -203,14 +207,91 @@ func RequestClaimVideoReward(ctx context.Context, logger runtime.Logger, db *sql
 		// User ID not found in the context.
 		return "ผิดพลาด", errors.New("can't find user id")
 	}
-	content := map[string]int64{
-		"gold": 100,
+	objectIds := []*runtime.StorageRead{
+		{
+			Collection: "user_video_ads",
+			Key:        "data",
+		},
 	}
-	metadata := map[string]interface{}{}
+	uAds := UserVideoAds{}
+	objects, err := nk.StorageRead(ctx, objectIds)
+	if err != nil {
+		logger.Error("User StorageRead: %v", err.Error())
+		// Handle error.
+		return "ผิดพลาด", nil
+	} else {
+		for _, object := range objects {
+			logger.Info("value: %s", object.Value)
+			if object.Key == "user_video_ads" {
+				if err := json.Unmarshal([]byte(object.Value), &uAds); err != nil {
+					logger.Error("Unable to read user_video_ads Unmarshal: %v", err)
+					return "ผิดพลาด", nil
+				}
+				if uAds.NumWatch >= VedioAdsCong.Number {
+					t, err := time.Parse(RFC3339FullDate, uAds.Date)
+					if err != nil {
+						return "ผิดพลาด", nil
+					}
+					if DateEqual(t, time.Now()) {
+						return "นายท่านดู ads ครบจำนวนแล้ว\nสามารถดูได้อีกวันถัดไป", nil
+					}
+				}
+			}
+		}
+	}
+
+	chip := int64(1000)
+	randomReward100 := 30
+	randomReward200 := 60
+	randomReward300 := 80
+	randomReward400 := 90
+	randomReward500 := 100
+	rate := rand.Intn(100) + 1
+	if rate <= randomReward100 {
+		chip = 1000
+	} else if rate <= randomReward200 {
+		chip = 2000
+	} else if rate <= randomReward300 {
+		chip = 3000
+	} else if rate <= randomReward400 {
+		chip = 4000
+	} else if rate <= randomReward500 {
+		chip = 5000
+	}
+	content := map[string]int64{
+		"gold": chip,
+	}
+	metadata := map[string]interface{}{
+		"random": chip,
+	}
+	uAds.NumWatch += 1
+	uAds.Date = time.Now().String()
+	b, err := json.Marshal(uAds)
+	if err != nil {
+		logger.Error("User Marshal RequestClaimVideoReward error: %v", err.Error())
+		return "ผิดพลาด", nil
+	}
+	// write
+	objectsW := []*runtime.StorageWrite{
+		{
+			Collection:      "user_video_ads",
+			Key:             "data",
+			UserID:          userId,
+			Value:           string(b),
+			PermissionRead:  1,
+			PermissionWrite: 1,
+		},
+	}
+	if _, err := nk.StorageWrite(ctx, objectsW); err != nil {
+		// Handle error.
+		logger.Error("User wallet StorageWrite: %v", err.Error())
+	}
+
 	if _, _, err := nk.WalletUpdate(ctx, userId, content, metadata, true); err != nil {
 		logger.Error("User wallet update error: %v", err.Error())
+		return "ผิดพลาด", nil
 	}
-	return "true", nil
+	return "สุ่มได้\n " + strconv.Itoa(int(chip)) + " ทอง", nil
 }
 
 func CheckCanWatchVideoAds(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, payload string) (string, error) {
@@ -219,5 +300,44 @@ func CheckCanWatchVideoAds(ctx context.Context, logger runtime.Logger, db *sql.D
 		// User ID not found in the context.
 		return "ผิดพลาด", errors.New("can't find user id")
 	}
+
+	objectIds := []*runtime.StorageRead{
+		{
+			Collection: "user_video_ads",
+			Key:        "data",
+		},
+	}
+	objects, err := nk.StorageRead(ctx, objectIds)
+	if err != nil {
+		logger.Error("User StorageRead: %v", err.Error())
+		// Handle error.
+		return "ผิดพลาด", errors.New("StorageRead")
+	} else {
+		for _, object := range objects {
+			logger.Info("value: %s", object.Value)
+			if object.Key == "user_video_ads" {
+				uAds := UserVideoAds{}
+				if err := json.Unmarshal([]byte(object.Value), &uAds); err != nil {
+					logger.Error("Unable to read user_video_ads Unmarshal: %v", err)
+					return "ผิดพลาด", nil
+				}
+				if uAds.NumWatch >= VedioAdsCong.Number {
+					t, err := time.Parse(RFC3339FullDate, uAds.Date)
+					if err != nil {
+						return "ผิดพลาด", nil
+					}
+					if DateEqual(t, time.Now()) {
+						return "นายท่านดู ads ครบจำนวนแล้ว\nสามารถดูได้อีกวันถัดไป", nil
+					}
+				}
+			}
+		}
+	}
 	return "true", nil
+}
+
+func DateEqual(date1, date2 time.Time) bool {
+	y1, m1, d1 := date1.Date()
+	y2, m2, d2 := date2.Date()
+	return y1 == y2 && m1 == m2 && d1 == d2
 }
