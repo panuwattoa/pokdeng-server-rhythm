@@ -211,6 +211,7 @@ func RequestClaimVideoReward(ctx context.Context, logger runtime.Logger, db *sql
 		{
 			Collection: "user_video_ads",
 			Key:        "data",
+			UserID:     userId,
 		},
 	}
 	uAds := UserVideoAds{}
