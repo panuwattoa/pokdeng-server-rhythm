@@ -213,7 +213,7 @@ func RequestClaimVideoReward(ctx context.Context, logger runtime.Logger, db *sql
 			Key:        "data",
 		},
 	}
-	uAds := UserVideoAds{}
+	uAds := &UserVideoAds{}
 	objects, err := nk.StorageRead(ctx, objectIds)
 	if err != nil {
 		logger.Error("User StorageRead: %v", err.Error())
