@@ -266,7 +266,7 @@ func RequestClaimVideoReward(ctx context.Context, logger runtime.Logger, db *sql
 	}
 
 	uAds.Date = time.Now().String()
-	uAds.NumWatch += 1
+	uAds.NumWatch = uAds.NumWatch + 1
 	b, err := json.Marshal(uAds)
 	logger.Debug("log user ads : %v", string(b))
 
