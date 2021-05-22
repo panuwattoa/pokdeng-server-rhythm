@@ -87,11 +87,14 @@ func (room *PokdengRoom) MatchInit(ctx context.Context, logger runtime.Logger, d
 func (room *PokdengRoom) MatchJoinAttempt(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, dispatcher runtime.MatchDispatcher, tick int64, state interface{}, presence runtime.Presence, metadata map[string]string) (interface{}, bool, string) {
 	ableToJoin := true
 	mState, _ := state.(*MatchState)
+	reason := ""
 	if len(mState.presences) >= 7 {
 		ableToJoin = false
+		reason = "ห้องเต็ม กรุณาเข้าใหม่อีกครั้ง"
 	}
 	if _, ok := mState.presences[presence.GetUserId()]; ok {
 		ableToJoin = false
+		reason = "นายท่านกำลังเล่นในห้องนี้กรุณนารอสักครู่"
 	}
 	logger.Debug("MaxBetRate ", mState.MaxBetRate)
 
@@ -99,13 +102,15 @@ func (room *PokdengRoom) MatchJoinAttempt(ctx context.Context, logger runtime.Lo
 
 	if len(mState.seatsCh) == 0 {
 		ableToJoin = false
+		reason = "ห้องเต็ม กรุณาเข้าใหม่อีกครั้ง"
 	}
 
 	var wallet = room.GetAccountWallet(ctx, logger, nk, presence.GetUserId())
 	if wallet < float64(mState.BetRate*5) {
 		ableToJoin = false
+		reason = "เงินไม่เพียงพอ"
 	}
-	return state, ableToJoin, ""
+	return state, ableToJoin, reason
 }
 
 // MatchJoin join what happend when user  join room
