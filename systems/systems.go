@@ -249,15 +249,15 @@ func RequestClaimVideoReward(ctx context.Context, logger runtime.Logger, db *sql
 	randomReward500 := 100
 	rate := rand.Intn(100) + 1
 	if rate <= randomReward100 {
-		chip = 1000
+		chip = 500
 	} else if rate <= randomReward200 {
-		chip = 2000
+		chip = 1000
 	} else if rate <= randomReward300 {
-		chip = 3000
+		chip = 1500
 	} else if rate <= randomReward400 {
-		chip = 4000
+		chip = 2500
 	} else if rate <= randomReward500 {
-		chip = 5000
+		chip = 3000
 	}
 	content := map[string]int64{
 		"gold": chip,
@@ -266,7 +266,7 @@ func RequestClaimVideoReward(ctx context.Context, logger runtime.Logger, db *sql
 		"random": chip,
 	}
 
-	uAds.Date = time.Now().String()
+	uAds.Date = time.Now().Format(RFC3339FullDate)
 	uAds.NumWatch = uAds.NumWatch + 1
 	b, err := json.Marshal(uAds)
 
@@ -319,7 +319,7 @@ func CheckCanWatchVideoAds(ctx context.Context, logger runtime.Logger, db *sql.D
 	} else {
 		for _, object := range objects {
 			logger.Info("value: %s", object.Value)
-			if object.Key == "user_video_ads" {
+			if object.Key == "data" {
 				uAds := UserVideoAds{}
 				if err := json.Unmarshal([]byte(object.Value), &uAds); err != nil {
 					logger.Error("Unable to read user_video_ads Unmarshal: %v", err)
