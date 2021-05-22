@@ -213,7 +213,7 @@ func RequestClaimVideoReward(ctx context.Context, logger runtime.Logger, db *sql
 			Key:        "data",
 		},
 	}
-	uAds := &UserVideoAds{}
+	uAds := UserVideoAds{}
 	objects, err := nk.StorageRead(ctx, objectIds)
 	if err != nil {
 		logger.Error("User StorageRead: %v", err.Error())
@@ -222,7 +222,7 @@ func RequestClaimVideoReward(ctx context.Context, logger runtime.Logger, db *sql
 	} else {
 		for _, object := range objects {
 			logger.Info("value: %s", object.Value)
-			if object.Key == "user_video_ads" {
+			if object.Key == "data" {
 				if err := json.Unmarshal([]byte(object.Value), &uAds); err != nil {
 					logger.Error("Unable to read user_video_ads Unmarshal: %v", err)
 					return "ผิดพลาด", nil
