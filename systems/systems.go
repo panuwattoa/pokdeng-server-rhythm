@@ -269,7 +269,6 @@ func RequestClaimVideoReward(ctx context.Context, logger runtime.Logger, db *sql
 	uAds.Date = time.Now().String()
 	uAds.NumWatch = uAds.NumWatch + 1
 	b, err := json.Marshal(uAds)
-	logger.Debug("log user ads : %v", string(b))
 
 	if err != nil {
 		logger.Error("User Marshal RequestClaimVideoReward error: %v", err.Error())
@@ -299,7 +298,7 @@ func RequestClaimVideoReward(ctx context.Context, logger runtime.Logger, db *sql
 }
 
 func CheckCanWatchVideoAds(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, payload string) (string, error) {
-	_, ok := ctx.Value(runtime.RUNTIME_CTX_USER_ID).(string)
+	userId, ok := ctx.Value(runtime.RUNTIME_CTX_USER_ID).(string)
 	if !ok {
 		// User ID not found in the context.
 		return "ผิดพลาด", errors.New("can't find user id")
@@ -309,6 +308,7 @@ func CheckCanWatchVideoAds(ctx context.Context, logger runtime.Logger, db *sql.D
 		{
 			Collection: "user_video_ads",
 			Key:        "data",
+			UserID:     userId,
 		},
 	}
 	objects, err := nk.StorageRead(ctx, objectIds)

@@ -11,7 +11,7 @@ type Product struct {
 }
 
 type VedioAds struct {
-	Number    uint `json:"videoads"`
+	Number    uint `json:"number"`
 	ResetTime uint `json:"resettime"`
 }
 
