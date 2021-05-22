@@ -16,6 +16,6 @@ type VedioAds struct {
 }
 
 type UserVideoAds struct {
-	NumWatch uint   `json:"num_watch"`
+	NumWatch int64  `json:"num_watch"`
 	Date     string `json:"Date"`
 }

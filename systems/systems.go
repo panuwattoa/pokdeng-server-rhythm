@@ -227,7 +227,7 @@ func RequestClaimVideoReward(ctx context.Context, logger runtime.Logger, db *sql
 					logger.Error("Unable to read user_video_ads Unmarshal: %v", err)
 					return "ผิดพลาด", nil
 				}
-				if uAds.NumWatch >= VedioAdsCong.Number {
+				if uint(uAds.NumWatch) >= VedioAdsCong.Number {
 					t, err := time.Parse(RFC3339FullDate, uAds.Date)
 					if err != nil {
 						return "ผิดพลาด", nil
@@ -264,9 +264,12 @@ func RequestClaimVideoReward(ctx context.Context, logger runtime.Logger, db *sql
 	metadata := map[string]interface{}{
 		"random": chip,
 	}
-	uAds.NumWatch += 1
+
 	uAds.Date = time.Now().String()
+	uAds.NumWatch += 1
 	b, err := json.Marshal(uAds)
+	logger.Debug("log user ads : %v", string(b))
+
 	if err != nil {
 		logger.Error("User Marshal RequestClaimVideoReward error: %v", err.Error())
 		return "ผิดพลาด", nil
@@ -321,7 +324,7 @@ func CheckCanWatchVideoAds(ctx context.Context, logger runtime.Logger, db *sql.D
 					logger.Error("Unable to read user_video_ads Unmarshal: %v", err)
 					return "ผิดพลาด", nil
 				}
-				if uAds.NumWatch >= VedioAdsCong.Number {
+				if uint(uAds.NumWatch) >= VedioAdsCong.Number {
 					t, err := time.Parse(RFC3339FullDate, uAds.Date)
 					if err != nil {
 						return "ผิดพลาด", nil
