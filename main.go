@@ -63,7 +63,21 @@ func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 		logger.Error("Unable to register: %v", err)
 		return err
 	}
+	objects := []*runtime.StorageWrite{
+		{
+			Collection:      "battle",
+			Key:             "army",
+			Value:           "{}",
+			PermissionRead:  2,
+			PermissionWrite: 0,
+		},
+	}
 
+	if _, err := nk.StorageWrite(ctx, objects); err != nil {
+		// Handle error.
+		logger.Error("Unable to write: %v", err)
+
+	}
 	return nil
 }
 
