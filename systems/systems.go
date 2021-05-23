@@ -275,6 +275,7 @@ func RequestClaimVideoReward(ctx context.Context, logger runtime.Logger, db *sql
 					if DateEqual(t, time.Now()) {
 						return "นายท่านดู ads ครบจำนวนแล้ว\nสามารถดูได้อีกวันถัดไป", nil
 					}
+					uAds.NumWatch = 0
 				}
 			}
 		}
