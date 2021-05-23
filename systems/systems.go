@@ -168,7 +168,6 @@ func CheckVersion(ctx context.Context, logger runtime.Logger, db *sql.DB, nk run
 	}
 	return "true", nil
 }
-
 func RequestPayment(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, payload string) (string, error) {
 	userId, ok := ctx.Value(runtime.RUNTIME_CTX_USER_ID).(string)
 	if !ok {
@@ -176,21 +175,21 @@ func RequestPayment(ctx context.Context, logger runtime.Logger, db *sql.DB, nk r
 		return "false", errors.New("can't find user id")
 	}
 
-	logger.Debug("got platfrom payload %v", payload)
+	logger.Debug(" %v", payload)
 
-	var input map[string]interface{}
+	var input map[string]string
 	err := json.Unmarshal([]byte(payload), &input)
 	if err != nil {
 		logger.Error("got Unmarshal err %v", err)
 		return "ไม่สำเร็จ", err
 	}
-	receipt, ok := input["receipt"].(string)
+	receipt, ok := input["receipt"]
 	if !ok {
 		logger.Error("got receipt err %v", err)
 		return "ไม่สำเร็จ", errors.New("can't find receipt")
 	}
 
-	platfrom, ok := input["platfrom"].(string)
+	platfrom, ok := input["platfrom"]
 	if !ok {
 		logger.Error("got platfrom err %v", err)
 		return "ไม่สำเร็จ", errors.New("can't find platfrom")
