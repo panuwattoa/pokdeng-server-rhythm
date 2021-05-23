@@ -439,29 +439,32 @@ func (room *PokdengRoom) MatchLoop(ctx context.Context, logger runtime.Logger, d
 		needWaitBet := mState.betCount < len(room.game.players)
 		if needWaitBet {
 			// mState.roomGameOpCode = GameOpCodeNone
-			if mState.timerRoom == nil {
-				mState.timerRoom = time.AfterFunc(10*time.Second, func() {
-					// logger.Debug("time out bet ..")
-					for _, player := range room.game.players {
-						if player.Bet == 0 {
-							player.Bet = mState.BetRate
-							mState.betCount++
-							sendMessage := CreatePlayerBet(player.SeatPosition, player.Bet)
-							sendto := []runtime.Presence{}
-							present, ok := mState.presences[player.UID]
-							if ok {
-								sendto = append(sendto, present)
-								err := dispatcher.BroadcastMessage(OpCodeUserBet, sendMessage, sendto, nil, true)
-								if err != nil {
-									logger.Info("cause an error when broadcasting", err)
-								}
+			// if mState.timerRoom == nil {
+			mState.timerRoom = time.AfterFunc(10*time.Second, func() {
+				// logger.Debug("time out bet ..")
+				for _, player := range room.game.players {
+					if player.Bet == 0 {
+						player.Bet = mState.BetRate
+						mState.betCount++
+						sendMessage := CreatePlayerBet(player.SeatPosition, player.Bet)
+						sendto := []runtime.Presence{}
+						present, ok := mState.presences[player.UID]
+						if ok {
+							sendto = append(sendto, present)
+							err := dispatcher.BroadcastMessage(OpCodeUserBet, sendMessage, sendto, nil, true)
+							if err != nil {
+								logger.Info("cause an error when broadcasting", err)
 							}
 						}
 					}
-					//	mState.roomGameOpCode = GameOpCodeDealCard
-				})
-			}
+				}
+				//	mState.roomGameOpCode = GameOpCodeDealCard
+			})
+			// }
 		} else {
+			if mState.timerRoom != nil {
+				mState.timerRoom.Stop()
+			}
 			mState.roomGameOpCode = GameOpCodeDealCard
 		}
 	case GameOpCodeDealCard:
