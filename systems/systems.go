@@ -176,6 +176,8 @@ func RequestPayment(ctx context.Context, logger runtime.Logger, db *sql.DB, nk r
 		return "false", errors.New("can't find user id")
 	}
 
+	logger.Debug("got platfrom payload %v", payload)
+
 	var input map[string]interface{}
 	err := json.Unmarshal([]byte(payload), &input)
 	if err != nil {
