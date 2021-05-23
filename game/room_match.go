@@ -75,9 +75,6 @@ func (room *PokdengRoom) MatchInit(ctx context.Context, logger runtime.Logger, d
 		}
 	}
 	room.tax = 1.5
-	if state.BetRate >= 200 {
-		room.tax = 1.0
-	}
 	tickRate := 1
 	room.PokdengPlayer = make(map[string]*PokdengPlayer)
 	return state, tickRate, label
@@ -211,7 +208,10 @@ func (room *PokdengRoom) MatchLoop(ctx context.Context, logger runtime.Logger, d
 			} else {
 				bet = uint64(userBet.Bet)
 			}
-			// var wallet = room.GetAccountWallet(ctx, logger, nk, message.GetUserId())
+			var wallet = room.GetAccountWallet(ctx, logger, nk, message.GetUserId())
+			if float64(bet) > wallet {
+				bet = uint64(wallet)
+			}
 			if room == nil {
 				break
 			}
@@ -309,7 +309,7 @@ func (room *PokdengRoom) MatchLoop(ctx context.Context, logger runtime.Logger, d
 		if err != nil {
 			logger.Info("cause an error when broadcasting", err)
 		}
-		mState.timerRoom = time.AfterFunc(10*time.Second, func() {
+		mState.timerRoom = time.AfterFunc(5*time.Second, func() {
 			for id, sit := range mState.sitUser {
 				var wallet = room.GetAccountWallet(ctx, logger, nk, id)
 				if wallet < float64(mState.BetRate*5) {

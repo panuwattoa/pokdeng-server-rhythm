@@ -19,6 +19,7 @@ const RFC3339FullDate = "2006-01-02"
 
 var IAPProductList map[string]Product
 var VedioAdsCong VedioAds
+var IAPRaw IAPProduct
 
 func InitializeUser(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, out *api.Session, in *api.AuthenticateDeviceRequest) error {
 	if out.Created {
@@ -36,6 +37,26 @@ func InitializeUser(ctx context.Context, logger runtime.Logger, db *sql.DB, nk r
 		if _, _, err := nk.WalletUpdate(ctx, userID, changeset, metadata, true); err != nil {
 			// Handle error.
 			logger.Error("Unable to WalletUpdate new user : %v", err)
+		}
+
+		// write
+		userInit := UserData{
+			NumSpecialIAP: 1,
+		}
+		b, _ := json.Marshal(userInit)
+		objectsW := []*runtime.StorageWrite{
+			{
+				Collection:      "user",
+				Key:             "data",
+				UserID:          userID,
+				Value:           string(b),
+				PermissionRead:  1,
+				PermissionWrite: 1,
+			},
+		}
+		if _, err := nk.StorageWrite(ctx, objectsW); err != nil {
+			// Handle error.
+			logger.Error("User wallet StorageWrite: %v", err.Error())
 		}
 	}
 	return nil
@@ -57,6 +78,25 @@ func InitializeFacebookUser(ctx context.Context, logger runtime.Logger, db *sql.
 		if _, _, err := nk.WalletUpdate(ctx, userID, changeset, metadata, true); err != nil {
 			// Handle error.
 			logger.Error("Unable to WalletUpdate new user : %v", err)
+		}
+		// write
+		userInit := UserData{
+			NumSpecialIAP: 1,
+		}
+		b, _ := json.Marshal(userInit)
+		objectsW := []*runtime.StorageWrite{
+			{
+				Collection:      "user",
+				Key:             "data",
+				UserID:          userID,
+				Value:           string(b),
+				PermissionRead:  1,
+				PermissionWrite: 1,
+			},
+		}
+		if _, err := nk.StorageWrite(ctx, objectsW); err != nil {
+			// Handle error.
+			logger.Error("User wallet StorageWrite: %v", err.Error())
 		}
 	}
 	return nil
@@ -153,6 +193,7 @@ func RequestPayment(ctx context.Context, logger runtime.Logger, db *sql.DB, nk r
 		logger.Error("got platfrom err %v", err)
 		return "ไม่สำเร็จ", errors.New("can't find platfrom")
 	}
+
 	purchase := &api.ValidatePurchaseResponse{}
 
 	if platfrom == "apple" {
@@ -174,7 +215,6 @@ func RequestPayment(ctx context.Context, logger runtime.Logger, db *sql.DB, nk r
 		var numGold int64
 		for _, v := range purchase.ValidatedPurchases {
 			if product, ok := IAPProductList[v.ProductId]; ok {
-				logger.Info("got product %v", product)
 				isPass = true
 				gold := int64(product.Gold) + int64(product.Bonus)
 				numGold += gold
@@ -222,7 +262,6 @@ func RequestClaimVideoReward(ctx context.Context, logger runtime.Logger, db *sql
 		return "ผิดพลาด", nil
 	} else {
 		for _, object := range objects {
-			logger.Info("value: %s", object.Value)
 			if object.Key == "data" {
 				if err := json.Unmarshal([]byte(object.Value), &uAds); err != nil {
 					logger.Error("Unable to read user_video_ads Unmarshal: %v", err)
@@ -241,9 +280,9 @@ func RequestClaimVideoReward(ctx context.Context, logger runtime.Logger, db *sql
 		}
 	}
 
-	chip := int64(1000)
-	randomReward100 := 30
-	randomReward200 := 60
+	chip := int64(500)
+	randomReward100 := 60
+	randomReward200 := 70
 	randomReward300 := 80
 	randomReward400 := 90
 	randomReward500 := 100
@@ -318,7 +357,6 @@ func CheckCanWatchVideoAds(ctx context.Context, logger runtime.Logger, db *sql.D
 		return "ผิดพลาด", errors.New("StorageRead")
 	} else {
 		for _, object := range objects {
-			logger.Info("value: %s", object.Value)
 			if object.Key == "data" {
 				uAds := UserVideoAds{}
 				if err := json.Unmarshal([]byte(object.Value), &uAds); err != nil {
@@ -340,6 +378,92 @@ func CheckCanWatchVideoAds(ctx context.Context, logger runtime.Logger, db *sql.D
 	return "true", nil
 }
 
+func CheckUserCanBuySpecialIAP(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, payload string) (string, error) {
+	userId, ok := ctx.Value(runtime.RUNTIME_CTX_USER_ID).(string)
+	if !ok {
+		// User ID not found in the context.
+		return "ผิดพลาด", errors.New("can't find user id")
+	}
+
+	objectIds := []*runtime.StorageRead{
+		{
+			Collection: "user",
+			Key:        "data",
+			UserID:     userId,
+		},
+	}
+	objects, err := nk.StorageRead(ctx, objectIds)
+	if err != nil {
+		logger.Error("User StorageRead: %v", err.Error())
+		// Handle error.
+		return "ผิดพลาด", errors.New("StorageRead")
+	} else {
+		for _, object := range objects {
+			if object.Key == "data" {
+				u := UserData{}
+				if err := json.Unmarshal([]byte(object.Value), &u); err != nil {
+					logger.Error("Unable to read user_video_ads Unmarshal: %v", err)
+					return "ผิดพลาด", nil
+				}
+				if u.NumSpecialIAP >= config.NumUserCanBuySpecialIAP {
+					return "false", nil
+				}
+			}
+		}
+	}
+	return "true", nil
+}
+
+func GetIAPList(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, payload string) (string, error) {
+	b, err := json.Marshal(IAPRaw)
+	if err != nil {
+		logger.Error(" Marshal: %v", err.Error())
+		// Handle error.
+		return "ผิดพลาด", errors.New("Marshal")
+	}
+	return string(b), nil
+}
+
+func BuySpecial(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, payload string) (string, error) {
+	userId, ok := ctx.Value(runtime.RUNTIME_CTX_USER_ID).(string)
+	if !ok {
+		// User ID not found in the context.
+		return "ผิดพลาด", errors.New("can't find user id")
+	}
+	objectIds := []*runtime.StorageRead{
+		{
+			Collection: "user",
+			Key:        "data",
+			UserID:     userId,
+		},
+	}
+	objects, _ := nk.StorageRead(ctx, objectIds)
+	for _, object := range objects {
+		if object.Key == "data" {
+			u := UserData{}
+			if err := json.Unmarshal([]byte(object.Value), &u); err != nil {
+				logger.Error("Unable to read user_video_ads Unmarshal: %v", err)
+			}
+			u.NumSpecialIAP += 1
+			b, _ := json.Marshal(u)
+			objectsW := []*runtime.StorageWrite{
+				{
+					Collection:      "user",
+					Key:             "data",
+					UserID:          userId,
+					Value:           string(b),
+					PermissionRead:  1,
+					PermissionWrite: 1,
+				},
+			}
+			if _, err := nk.StorageWrite(ctx, objectsW); err != nil {
+				// Handle error.
+				logger.Error("User wallet StorageWrite: %v", err.Error())
+			}
+		}
+	}
+	return "", nil
+}
 func DateEqual(date1, date2 time.Time) bool {
 	y1, m1, d1 := date1.Date()
 	y2, m2, d2 := date2.Date()

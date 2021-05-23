@@ -50,6 +50,20 @@ func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 		return err
 	}
 
+	if err := initializer.RegisterRpc("request_iap_list", systems.GetIAPList); err != nil {
+		logger.Error("Unable to register: %v", err)
+		return err
+	}
+	if err := initializer.RegisterRpc("buy_special", systems.BuySpecial); err != nil {
+		logger.Error("Unable to register: %v", err)
+		return err
+	}
+
+	if err := initializer.RegisterRpc("request_check_special_iap", systems.CheckUserCanBuySpecialIAP); err != nil {
+		logger.Error("Unable to register: %v", err)
+		return err
+	}
+
 	if err := initializer.RegisterAfterAuthenticateDevice(systems.InitializeUser); err != nil {
 		logger.Error("Unable to register: %v", err)
 		return err
@@ -59,6 +73,12 @@ func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 		logger.Error("Unable to register: %v", err)
 		return err
 	}
+
+	if err := initializer.RegisterRpc("request_check_can_buy_special_iap", systems.CheckUserCanBuySpecialIAP); err != nil {
+		logger.Error("Unable to register: %v", err)
+		return err
+	}
+
 	// init config
 
 	objects, err := nk.StorageRead(ctx, config.InitStorage)
@@ -70,13 +90,12 @@ func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 		for _, object := range objects {
 			logger.Info("value: %s", object.Value)
 			if object.Key == config.IAPStorageKey {
-				var iapProduct systems.IAPProduct
-				if err := json.Unmarshal([]byte(object.Value), &iapProduct); err != nil {
+				if err := json.Unmarshal([]byte(object.Value), &systems.IAPRaw); err != nil {
 					logger.Error("Unable to read IAPStorageKey: %v", err)
 					continue
 				}
 				systems.IAPProductList = make(map[string]systems.Product)
-				for _, v := range iapProduct.IAP {
+				for _, v := range systems.IAPRaw.IAP {
 					systems.IAPProductList[v.ProductID] = v
 				}
 			}
