@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"math/rand"
 	"pokdeng-server/config"
 	"sort"
@@ -179,7 +178,7 @@ func RequestPaymentGoogle(ctx context.Context, logger runtime.Logger, db *sql.DB
 	logger.Debug(" %v", payload)
 
 	purchase := &api.ValidatePurchaseResponse{}
-	purchase, err := nk.PurchaseValidateGoogle(ctx, userId, fmt.Sprintf("%v", payload))
+	purchase, err := nk.PurchaseValidateGoogle(ctx, userId, payload)
 	if err != nil {
 		logger.Error("got PurchaseValidateGoogle %v", err)
 		return "ไม่สำเร็จ", errors.New("can't validate payload")
@@ -227,7 +226,7 @@ func RequestPaymentApple(ctx context.Context, logger runtime.Logger, db *sql.DB,
 
 	purchase := &api.ValidatePurchaseResponse{}
 
-	purchase, err := nk.PurchaseValidateApple(ctx, userId, fmt.Sprintf("%v", payload))
+	purchase, err := nk.PurchaseValidateApple(ctx, userId, payload)
 	if err != nil {
 		logger.Error("got PurchaseValidateApple %v", err)
 		return "ไม่สำเร็จ", errors.New("can't validate payload")
