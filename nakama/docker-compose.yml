@@ -19,7 +19,7 @@ services:
       - "-ecx"
       - >
           /nakama/nakama migrate up --database.address root@cockroachdb:26257 &&
-          exec /nakama/nakama --config /nakama/data/my-config.yml
+          /nakama/nakama --config /nakama/data/my-config.yml
     restart: always
     links:
       - "cockroachdb:db"
@@ -27,7 +27,7 @@ services:
       - cockroachdb
       - prometheus
     volumes:
-      - ./nakama/data:/nakama/data
+      - ./data:/nakama/data
     expose:
       - "7349"
       - "7350"
