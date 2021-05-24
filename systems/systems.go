@@ -169,7 +169,7 @@ func CheckVersion(ctx context.Context, logger runtime.Logger, db *sql.DB, nk run
 	}
 	return "true", nil
 }
-func RequestPayment(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, payload string) (string, error) {
+func RequestPaymentGoogle(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, payload string) (string, error) {
 	userId, ok := ctx.Value(runtime.RUNTIME_CTX_USER_ID).(string)
 	if !ok {
 		// User ID not found in the context.
@@ -178,43 +178,59 @@ func RequestPayment(ctx context.Context, logger runtime.Logger, db *sql.DB, nk r
 
 	logger.Debug(" %v", payload)
 
-	var input map[string]interface{}
-	err := json.Unmarshal([]byte(payload), &input)
+	purchase := &api.ValidatePurchaseResponse{}
+	purchase, err := nk.PurchaseValidateGoogle(ctx, userId, fmt.Sprintf("%v", payload))
 	if err != nil {
-		logger.Error("got Unmarshal err %v", err)
-		return "ไม่สำเร็จ", err
-	}
-	receipt, ok := input["receipt"]
-	if !ok {
-		logger.Error("got receipt err %v", err)
-		return "ไม่สำเร็จ", errors.New("can't find receipt")
+		logger.Error("got PurchaseValidateGoogle %v", err)
+		return "ไม่สำเร็จ", errors.New("can't validate payload")
 	}
 
-	platfrom, ok := input["platfrom"]
-	if !ok {
-		logger.Error("got platfrom err %v", err)
-		return "ไม่สำเร็จ", errors.New("can't find platfrom")
+	if purchase != nil {
+		var isPass bool
+		var numGold int64
+		for _, v := range purchase.ValidatedPurchases {
+			if product, ok := IAPProductList[v.ProductId]; ok {
+				isPass = true
+				gold := int64(product.Gold) + int64(product.Bonus)
+				numGold += gold
+				content := map[string]int64{
+					"gold": gold,
+				}
+				metadata := map[string]interface{}{
+					"iap":           product.ProductID,
+					"time":          v.PurchaseTime,
+					"store":         v.Store,
+					"TransactionId": v.TransactionId,
+					"env":           v.Environment,
+					"bonus":         product.Bonus,
+				}
+				if _, _, err := nk.WalletUpdate(ctx, userId, content, metadata, true); err != nil {
+					logger.Error("User wallet update error: %v", err.Error())
+				}
+			}
+		}
+		if isPass {
+			return "นายท่านได้รับ\n" + strconv.Itoa(int(numGold)) + " ทอง", nil
+		}
 	}
+	return "ไม่สำเร็จ", errors.New("can't validate payload")
+}
+
+func RequestPaymentApple(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, payload string) (string, error) {
+	userId, ok := ctx.Value(runtime.RUNTIME_CTX_USER_ID).(string)
+	if !ok {
+		// User ID not found in the context.
+		return "false", errors.New("can't find user id")
+	}
+
+	logger.Debug(" %v", payload)
 
 	purchase := &api.ValidatePurchaseResponse{}
-	logger.Debug("receipt %v", fmt.Sprintf("%v", receipt))
 
+	purchase, err := nk.PurchaseValidateApple(ctx, userId, fmt.Sprintf("%v", payload))
 	if err != nil {
-		logger.Error("got platfrom err %v", err)
-		return "ไม่สำเร็จ", errors.New("can't find platfrom")
-	}
-	if platfrom == "apple" {
-		purchase, err = nk.PurchaseValidateApple(ctx, userId, fmt.Sprintf("%v", receipt))
-		if err != nil {
-			logger.Error("got PurchaseValidateApple %v", err)
-			return "ไม่สำเร็จ", errors.New("can't validate payload")
-		}
-	} else if platfrom == "google" {
-		purchase, err = nk.PurchaseValidateGoogle(ctx, userId, fmt.Sprintf("%v", receipt))
-		if err != nil {
-			logger.Error("got PurchaseValidateGoogle %v", err)
-			return "ไม่สำเร็จ", errors.New("can't validate payload")
-		}
+		logger.Error("got PurchaseValidateApple %v", err)
+		return "ไม่สำเร็จ", errors.New("can't validate payload")
 	}
 
 	if purchase != nil {

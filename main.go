@@ -35,7 +35,12 @@ func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 		return err
 	}
 
-	if err := initializer.RegisterRpc("request_payment", systems.RequestPayment); err != nil {
+	if err := initializer.RegisterRpc("request_payment_goolge", systems.RequestPaymentGoogle); err != nil {
+		logger.Error("Unable to register: %v", err)
+		return err
+	}
+
+	if err := initializer.RegisterRpc("request_payment_apple", systems.RequestPaymentApple); err != nil {
 		logger.Error("Unable to register: %v", err)
 		return err
 	}
