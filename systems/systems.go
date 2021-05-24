@@ -196,15 +196,17 @@ func RequestPayment(ctx context.Context, logger runtime.Logger, db *sql.DB, nk r
 	}
 
 	purchase := &api.ValidatePurchaseResponse{}
-	recp, err := json.Marshal(receipt)
-	logger.Debug("receipt %v", string(recp))
+	var recp string
+	err = json.Unmarshal([]byte(receipt.(string)), &recp)
+	logger.Debug("recp %v", recp)
+	logger.Debug("receipt %v", receipt)
 
 	if err != nil {
 		logger.Error("got platfrom err %v", err)
 		return "ไม่สำเร็จ", errors.New("can't find platfrom")
 	}
 	if platfrom == "apple" {
-		purchase, err = nk.PurchaseValidateApple(ctx, userId, string(recp))
+		purchase, err = nk.PurchaseValidateApple(ctx, userId, recp)
 		if err != nil {
 			logger.Error("got PurchaseValidateApple %v", err)
 			return "ไม่สำเร็จ", errors.New("can't validate payload")
