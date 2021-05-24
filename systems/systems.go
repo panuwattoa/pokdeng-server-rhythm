@@ -188,7 +188,6 @@ func RequestPayment(ctx context.Context, logger runtime.Logger, db *sql.DB, nk r
 		logger.Error("got receipt err %v", err)
 		return "ไม่สำเร็จ", errors.New("can't find receipt")
 	}
-	logger.Debug("receipt %v", receipt)
 
 	platfrom, ok := input["platfrom"]
 	if !ok {
@@ -198,6 +197,8 @@ func RequestPayment(ctx context.Context, logger runtime.Logger, db *sql.DB, nk r
 
 	purchase := &api.ValidatePurchaseResponse{}
 	recp, err := json.Marshal(receipt)
+	logger.Debug("receipt %v", string(recp))
+
 	if err != nil {
 		logger.Error("got platfrom err %v", err)
 		return "ไม่สำเร็จ", errors.New("can't find platfrom")
