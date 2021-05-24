@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math/rand"
 	"pokdeng-server/config"
 	"sort"
@@ -196,23 +197,20 @@ func RequestPayment(ctx context.Context, logger runtime.Logger, db *sql.DB, nk r
 	}
 
 	purchase := &api.ValidatePurchaseResponse{}
-	var recp string
-	err = json.Unmarshal([]byte(receipt.(string)), &recp)
-	logger.Debug("recp %v", recp)
-	logger.Debug("receipt %v", receipt)
+	logger.Debug("receipt %v", fmt.Sprintf("%v", receipt))
 
 	if err != nil {
 		logger.Error("got platfrom err %v", err)
 		return "ไม่สำเร็จ", errors.New("can't find platfrom")
 	}
 	if platfrom == "apple" {
-		purchase, err = nk.PurchaseValidateApple(ctx, userId, recp)
+		purchase, err = nk.PurchaseValidateApple(ctx, userId, fmt.Sprintf("%v", receipt))
 		if err != nil {
 			logger.Error("got PurchaseValidateApple %v", err)
 			return "ไม่สำเร็จ", errors.New("can't validate payload")
 		}
 	} else if platfrom == "google" {
-		purchase, err = nk.PurchaseValidateGoogle(ctx, userId, string(recp))
+		purchase, err = nk.PurchaseValidateGoogle(ctx, userId, fmt.Sprintf("%v", receipt))
 		if err != nil {
 			logger.Error("got PurchaseValidateGoogle %v", err)
 			return "ไม่สำเร็จ", errors.New("can't validate payload")
