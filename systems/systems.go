@@ -177,19 +177,19 @@ func RequestPayment(ctx context.Context, logger runtime.Logger, db *sql.DB, nk r
 
 	logger.Debug(" %v", payload)
 
-	var input map[string]interface{}
+	var input map[string]string
 	err := json.Unmarshal([]byte(payload), &input)
 	if err != nil {
 		logger.Error("got Unmarshal err %v", err)
 		return "ไม่สำเร็จ", err
 	}
-	receipt, ok := input["receipt"].([]byte)
+	receipt, ok := input["receipt"]
 	if !ok {
 		logger.Error("got receipt err %v", err)
 		return "ไม่สำเร็จ", errors.New("can't find receipt")
 	}
 
-	platfrom, ok := input["platfrom"].(string)
+	platfrom, ok := input["platfrom"]
 	if !ok {
 		logger.Error("got platfrom err %v", err)
 		return "ไม่สำเร็จ", errors.New("can't find platfrom")
@@ -198,13 +198,13 @@ func RequestPayment(ctx context.Context, logger runtime.Logger, db *sql.DB, nk r
 	purchase := &api.ValidatePurchaseResponse{}
 
 	if platfrom == "apple" {
-		purchase, err = nk.PurchaseValidateApple(ctx, userId, string(receipt))
+		purchase, err = nk.PurchaseValidateApple(ctx, userId, receipt)
 		if err != nil {
 			logger.Error("got PurchaseValidateApple %v", err)
 			return "ไม่สำเร็จ", errors.New("can't validate payload")
 		}
 	} else if platfrom == "google" {
-		purchase, err = nk.PurchaseValidateGoogle(ctx, userId, string(receipt))
+		purchase, err = nk.PurchaseValidateGoogle(ctx, userId, receipt)
 		if err != nil {
 			logger.Error("got PurchaseValidateGoogle %v", err)
 			return "ไม่สำเร็จ", errors.New("can't validate payload")
