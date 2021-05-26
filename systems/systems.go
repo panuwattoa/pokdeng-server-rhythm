@@ -305,9 +305,9 @@ func RequestClaimVideoReward(ctx context.Context, logger runtime.Logger, db *sql
 
 	chip := int64(500)
 	randomReward100 := 60
-	randomReward200 := 70
-	randomReward300 := 80
-	randomReward400 := 90
+	randomReward200 := 90
+	randomReward300 := 95
+	randomReward400 := 98
 	randomReward500 := 100
 	rate := rand.Intn(100) + 1
 	if rate <= randomReward100 {
@@ -325,7 +325,7 @@ func RequestClaimVideoReward(ctx context.Context, logger runtime.Logger, db *sql
 		"gold": chip,
 	}
 	metadata := map[string]interface{}{
-		"random": chip,
+		"random": rate,
 	}
 
 	uAds.Date = time.Now().Format(RFC3339FullDate)
