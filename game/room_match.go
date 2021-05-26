@@ -19,18 +19,19 @@ const (
 )
 
 type MatchState struct {
-	debug          bool
-	presences      map[string]runtime.Presence
-	seatsCh        chan *Seat
-	sitUser        map[string]*Seat
-	BetRate        uint64
-	MaxBetRate     uint64
-	roomPlaying    bool
-	betCount       int
-	roomGameOpCode int
-	UserName       map[string]string
-	RequestLeave   map[string]string
-	timerRoom      *time.Timer
+	debug               bool
+	presences           map[string]runtime.Presence
+	seatsCh             chan *Seat
+	sitUser             map[string]*Seat
+	BetRate             uint64
+	MaxBetRate          uint64
+	roomPlaying         bool
+	betCount            int
+	roomGameOpCode      int
+	UserName            map[string]string
+	RequestLeave        map[string]string
+	RequestCancelDealer map[string]string
+	timerRoom           *time.Timer
 }
 
 type Seat struct {
@@ -58,15 +59,16 @@ func (room *PokdengRoom) MatchInit(ctx context.Context, logger runtime.Logger, d
 	i64, _ := strconv.ParseInt(label, 10, 32)
 
 	state := &MatchState{
-		debug:        debug,
-		presences:    make(map[string]runtime.Presence),
-		seatsCh:      make(chan *Seat, 7),
-		sitUser:      make(map[string]*Seat),
-		BetRate:      uint64(i64),
-		MaxBetRate:   uint64(i64) * 10,
-		roomPlaying:  false,
-		UserName:     make(map[string]string),
-		RequestLeave: make(map[string]string),
+		debug:               debug,
+		presences:           make(map[string]runtime.Presence),
+		seatsCh:             make(chan *Seat, 7),
+		sitUser:             make(map[string]*Seat),
+		BetRate:             uint64(i64),
+		MaxBetRate:          uint64(i64) * 10,
+		roomPlaying:         false,
+		UserName:            make(map[string]string),
+		RequestLeave:        make(map[string]string),
+		RequestCancelDealer: make(map[string]string),
 	}
 
 	for i := 1; i <= 7; i++ {
@@ -288,7 +290,14 @@ func (room *PokdengRoom) MatchLoop(ctx context.Context, logger runtime.Logger, d
 			// }
 		case OpCodeRequestDealer:
 			room.ArrayRandomDealer = append(room.ArrayRandomDealer, message.GetUserId())
-		case OpCodeJub:
+		case OpCodeCancelDealer:
+			mState.RequestCancelDealer[message.GetUserId()] = message.GetUserId()
+			for index, requestDealer := range room.ArrayRandomDealer {
+				if requestDealer == message.GetUserId() {
+					room.ArrayRandomDealer = append(room.ArrayRandomDealer[:index], room.ArrayRandomDealer[index+1:]...)
+					break
+				}
+			}
 		default:
 			break
 		}
@@ -856,6 +865,7 @@ func (room *PokdengRoom) MatchLoop(ctx context.Context, logger runtime.Logger, d
 			}
 			for index, requestDealer := range room.ArrayRandomDealer {
 				if requestDealer == id {
+					delete(mState.RequestCancelDealer, *room.DealerID)
 					room.DealerID = nil
 					room.DealerTurnCount = 0
 					room.ArrayRandomDealer = append(room.ArrayRandomDealer[:index], room.ArrayRandomDealer[index+1:]...)
@@ -869,6 +879,10 @@ func (room *PokdengRoom) MatchLoop(ctx context.Context, logger runtime.Logger, d
 		}
 		if room.DealerID != nil {
 			if room.DealerTurnCount <= 1 {
+				room.DealerID = nil
+			}
+			if _, ok := mState.RequestCancelDealer[*room.DealerID]; ok {
+				delete(mState.RequestCancelDealer, *room.DealerID)
 				room.DealerID = nil
 			}
 		}

@@ -26,6 +26,7 @@ const (
 	OpCodeSelfLeave
 	OpCodeOpenRequestDealer
 	OpCodeDealerResult
+	OpCodeCancelDealer
 )
 
 const (
