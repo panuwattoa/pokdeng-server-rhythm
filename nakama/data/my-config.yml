@@ -51,8 +51,8 @@ session:
 
 console:
     port: 7351
-    username: "admin"
-    password: "test123456"
+    username: "zazaessza"
+    password: "hnfdxy9c"
 
 # matchmaker:
 #         max_tickets: 2

@@ -8,7 +8,7 @@ const (
 	SettingStorageKey       = "setting"
 	IAPStorageKey           = "iap-product"
 	VideoAdsKey             = "videoads"
-	NumUserCanBuySpecialIAP = 1
+	NumUserCanBuySpecialIAP = 2
 )
 
 var InitStorage = []*runtime.StorageRead{
