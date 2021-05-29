@@ -456,14 +456,9 @@ func (room *PokdengRoom) MatchLoop(ctx context.Context, logger runtime.Logger, d
 						player.Bet = mState.BetRate
 						mState.betCount++
 						sendMessage := CreatePlayerBet(player.SeatPosition, player.Bet)
-						sendto := []runtime.Presence{}
-						present, ok := mState.presences[player.UID]
-						if ok {
-							sendto = append(sendto, present)
-							err := dispatcher.BroadcastMessage(OpCodeUserBet, sendMessage, sendto, nil, true)
-							if err != nil {
-								logger.Info("cause an error when broadcasting", err)
-							}
+						err := dispatcher.BroadcastMessage(OpCodeUserBet, sendMessage, nil, nil, true)
+						if err != nil {
+							logger.Info("cause an error when broadcasting", err)
 						}
 					}
 				}
