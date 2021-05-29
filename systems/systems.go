@@ -305,9 +305,9 @@ func RequestClaimVideoReward(ctx context.Context, logger runtime.Logger, db *sql
 
 	chip := int64(500)
 	randomReward100 := 30
-	randomReward200 := 50
-	randomReward300 := 95
-	randomReward400 := 98
+	randomReward200 := 40
+	randomReward300 := 60
+	randomReward400 := 95
 	randomReward500 := 100
 	rate := rand.Intn(100) + 1
 	if rate <= randomReward100 {
