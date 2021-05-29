@@ -318,7 +318,7 @@ func (room *PokdengRoom) MatchLoop(ctx context.Context, logger runtime.Logger, d
 		if err != nil {
 			logger.Info("cause an error when broadcasting", err)
 		}
-		mState.timerRoom = time.AfterFunc(5*time.Second, func() {
+		mState.timerRoom = time.AfterFunc(3*time.Second, func() {
 			for id, sit := range mState.sitUser {
 				var wallet = room.GetAccountWallet(ctx, logger, nk, id)
 				if wallet < float64(mState.BetRate*5) {
@@ -370,7 +370,7 @@ func (room *PokdengRoom) MatchLoop(ctx context.Context, logger runtime.Logger, d
 	case GamePlayerReadyPlay:
 		// check user chip
 		mState.roomGameOpCode = GameOpCodeNone
-		mState.timerRoom = time.AfterFunc(3*time.Second, func() {
+		mState.timerRoom = time.AfterFunc(2*time.Second, func() {
 			mState.roomGameOpCode = GameInitGamePlay
 		})
 	case GameInitGamePlay:
