@@ -317,7 +317,7 @@ func RequestClaimVideoReward(ctx context.Context, logger runtime.Logger, db *sql
 	} else if rate <= randomReward300 {
 		chip = 1000
 	} else if rate <= randomReward400 {
-		chip = 1100
+		chip = 1300
 	} else if rate <= randomReward500 {
 		chip = 3000
 	}
