@@ -873,12 +873,13 @@ func (room *PokdengRoom) MatchLoop(ctx context.Context, logger runtime.Logger, d
 			delete(mState.RequestLeave, id)
 		}
 		if room.DealerID != nil {
-			if room.DealerTurnCount <= 1 {
-				room.DealerID = nil
-			}
 			if _, ok := mState.RequestCancelDealer[*room.DealerID]; ok {
 				delete(mState.RequestCancelDealer, *room.DealerID)
 				room.DealerID = nil
+			} else {
+				if room.DealerTurnCount <= 1 {
+					room.DealerID = nil
+				}
 			}
 		}
 		mState.roomGameOpCode = GameOpCodeWaitOpenTable
