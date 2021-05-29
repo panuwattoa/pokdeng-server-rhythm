@@ -370,7 +370,7 @@ func (room *PokdengRoom) MatchLoop(ctx context.Context, logger runtime.Logger, d
 	case GamePlayerReadyPlay:
 		// check user chip
 		mState.roomGameOpCode = GameOpCodeNone
-		mState.timerRoom = time.AfterFunc(5*time.Second, func() {
+		mState.timerRoom = time.AfterFunc(3*time.Second, func() {
 			mState.roomGameOpCode = GameInitGamePlay
 		})
 	case GameInitGamePlay:
