@@ -254,7 +254,8 @@ func (room *PokdengRoom) MatchLoop(ctx context.Context, logger runtime.Logger, d
 			// var leaveID Leave
 			// err := json.Unmarshal(message.GetData(), &leaveID)
 			// if err == nil {
-			if mState.roomPlaying {
+			_, ok := room.PokdengPlayer[message.GetUserId()]
+			if mState.roomPlaying && ok {
 				mState.RequestLeave[message.GetUserId()] = message.GetUserId()
 			} else {
 				sitUser, ok := mState.sitUser[message.GetUserId()]
@@ -390,6 +391,10 @@ func (room *PokdengRoom) MatchLoop(ctx context.Context, logger runtime.Logger, d
 			userIDIsDealer := room.ArrayRandomDealer[randomIndex]
 			room.DealerID = &userIDIsDealer
 			room.DealerTurnCount = 3
+		}
+
+		if len(mState.sitUser) < 2 {
+			room.DealerID = nil
 		}
 
 		if room.DealerID != nil {
@@ -888,6 +893,7 @@ func (room *PokdengRoom) MatchLoop(ctx context.Context, logger runtime.Logger, d
 		}
 		mState.betCount = 0
 	}
+	room.PokdengPlayer = make(map[string]*PokdengPlayer)
 
 	return state
 }
