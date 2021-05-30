@@ -255,7 +255,8 @@ func (room *PokdengRoom) MatchLoop(ctx context.Context, logger runtime.Logger, d
 			// err := json.Unmarshal(message.GetData(), &leaveID)
 			// if err == nil {
 			_, ok := room.PokdengPlayer[message.GetUserId()]
-			if mState.roomPlaying && ok {
+
+			if ok || (room.DealerID != nil && *room.DealerID == message.GetUserId()) {
 				mState.RequestLeave[message.GetUserId()] = message.GetUserId()
 			} else {
 				sitUser, ok := mState.sitUser[message.GetUserId()]
