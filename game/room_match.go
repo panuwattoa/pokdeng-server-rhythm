@@ -455,7 +455,7 @@ func (room *PokdengRoom) MatchLoop(ctx context.Context, logger runtime.Logger, d
 		if needWaitBet {
 			// mState.roomGameOpCode = GameOpCodeNone
 			// if mState.timerRoom == nil {
-			mState.timerRoom = time.AfterFunc(10*time.Second, func() {
+			mState.timerRoom = time.AfterFunc(11*time.Second, func() {
 				// logger.Debug("time out bet ..")
 				for _, player := range room.game.players {
 					if player.Bet == 0 {
@@ -893,8 +893,8 @@ func (room *PokdengRoom) MatchLoop(ctx context.Context, logger runtime.Logger, d
 			mState.roomGameOpCode = GameOpCodeNone
 		}
 		mState.betCount = 0
+		room.PokdengPlayer = make(map[string]*PokdengPlayer)
 	}
-	room.PokdengPlayer = make(map[string]*PokdengPlayer)
 
 	return state
 }
