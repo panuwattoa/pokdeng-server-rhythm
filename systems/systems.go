@@ -543,7 +543,7 @@ func ClaimUserDailyReward(ctx context.Context, logger runtime.Logger, db *sql.DB
 				logger.Error("User wallet update error: %v", err.Error())
 				return "ผิดพลาด", nil
 			}
-			return strconv.Itoa(number), nil
+			return string(b), nil
 		}
 	}
 	return "ผิดพลาด", errors.New("can't find data id")
