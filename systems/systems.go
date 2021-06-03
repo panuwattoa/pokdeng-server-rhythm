@@ -511,9 +511,6 @@ func ClaimUserDailyReward(ctx context.Context, logger runtime.Logger, db *sql.DB
 				logger.Error("Unable to read user_video_ads Unmarshal: %v", err)
 				return "ผิดพลาด", errors.New("can't find data id")
 			}
-			if int(u.NumDailyLogin) >= len(DailyRewardList.Reward)-1 {
-				u.NumDailyLogin = 0
-			}
 			t, _ := time.Parse(RFC3339FullDate, u.DateDailyLogin)
 			if DateEqual(t, time.Now()) || u.IsRecivedDailyToday {
 				return "นายท่านดู ads ครบจำนวนแล้ว\nสามารถดูได้อีกวันถัดไป", errors.New("can't save data id")
@@ -580,6 +577,9 @@ func CheckUserData(ctx context.Context, logger runtime.Logger, db *sql.DB, nk ru
 			t, _ := time.Parse(RFC3339FullDate, u.DateDailyLogin)
 			if !DateEqual(t, time.Now()) {
 				u.IsRecivedDailyToday = false
+				if int(u.NumDailyLogin) >= len(DailyRewardList.Reward)-1 {
+					u.NumDailyLogin = 0
+				}
 				b, _ := json.Marshal(u)
 				objectsW := []*runtime.StorageWrite{
 					{
