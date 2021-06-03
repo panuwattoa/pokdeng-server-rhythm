@@ -520,6 +520,7 @@ func ClaimUserDailyReward(ctx context.Context, logger runtime.Logger, db *sql.DB
 			}
 			u.DateDailyLogin = time.Now().Format(RFC3339FullDate)
 			u.IsRecivedDailyToday = true
+			number := DailyRewardList.Reward[int(u.NumDailyLogin)]
 			u.NumDailyLogin++
 			b, _ := json.Marshal(u)
 			objectsW := []*runtime.StorageWrite{
@@ -537,7 +538,6 @@ func ClaimUserDailyReward(ctx context.Context, logger runtime.Logger, db *sql.DB
 				logger.Error("User wallet StorageWrite: %v", err.Error())
 				return "ผิดพลาด", errors.New("can't save data id")
 			}
-			number := DailyRewardList.Reward[int(u.NumDailyLogin)]
 			content := map[string]int64{
 				"gold": int64(number),
 			}
