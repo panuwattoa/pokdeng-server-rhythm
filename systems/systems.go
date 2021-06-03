@@ -514,10 +514,7 @@ func ClaimUserDailyReward(ctx context.Context, logger runtime.Logger, db *sql.DB
 			if int(u.NumDailyLogin) >= len(DailyRewardList.Reward) {
 				u.NumDailyLogin = 0
 			}
-			t, err := time.Parse(RFC3339FullDate, u.DateDailyLogin)
-			if err != nil {
-				return "ผิดพลาด", errors.New("can't save data id")
-			}
+			t, _ := time.Parse(RFC3339FullDate, u.DateDailyLogin)
 			if DateEqual(t, time.Now()) || u.IsRecivedDailyToday {
 				return "นายท่านดู ads ครบจำนวนแล้ว\nสามารถดูได้อีกวันถัดไป", errors.New("can't save data id")
 			}
