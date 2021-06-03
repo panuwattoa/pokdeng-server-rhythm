@@ -20,6 +20,8 @@ const RFC3339FullDate = "2006-01-02"
 var IAPProductList map[string]Product
 var VedioAdsCong VedioAds
 var IAPRaw IAPProduct
+var DailyRewardList DailyLoginReward
+var PlayRewardList PlayReward
 
 func InitializeUser(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, out *api.Session, in *api.AuthenticateDeviceRequest) error {
 	if out.Created {
@@ -321,12 +323,6 @@ func RequestClaimVideoReward(ctx context.Context, logger runtime.Logger, db *sql
 	} else if rate <= randomReward500 {
 		chip = 3000
 	}
-	content := map[string]int64{
-		"gold": chip,
-	}
-	metadata := map[string]interface{}{
-		"random": rate,
-	}
 
 	uAds.Date = time.Now().Format(RFC3339FullDate)
 	uAds.NumWatch = uAds.NumWatch + 1
@@ -350,6 +346,12 @@ func RequestClaimVideoReward(ctx context.Context, logger runtime.Logger, db *sql
 	if _, err := nk.StorageWrite(ctx, objectsW); err != nil {
 		// Handle error.
 		logger.Error("User wallet StorageWrite: %v", err.Error())
+	}
+	content := map[string]int64{
+		"gold": chip,
+	}
+	metadata := map[string]interface{}{
+		"random": rate,
 	}
 
 	if _, _, err := nk.WalletUpdate(ctx, userId, content, metadata, true); err != nil {
@@ -463,8 +465,8 @@ func BuySpecial(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 	objects, _ := nk.StorageRead(ctx, objectIds)
 	for _, object := range objects {
 		if object.Key == "data" {
-			u := UserData{}
-			if err := json.Unmarshal([]byte(object.Value), &u); err != nil {
+			u := &UserData{}
+			if err := json.Unmarshal([]byte(object.Value), u); err != nil {
 				logger.Error("Unable to read user_video_ads Unmarshal: %v", err)
 			}
 			u.NumSpecialIAP += 1
@@ -487,6 +489,172 @@ func BuySpecial(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 	}
 	return "", nil
 }
+
+func ClaimUserDailyReward(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, payload string) (string, error) {
+	userId, ok := ctx.Value(runtime.RUNTIME_CTX_USER_ID).(string)
+	if !ok {
+		// User ID not found in the context.
+		return "ผิดพลาด", errors.New("can't find user id")
+	}
+	objectIds := []*runtime.StorageRead{
+		{
+			Collection: "user",
+			Key:        "data",
+			UserID:     userId,
+		},
+	}
+	objects, _ := nk.StorageRead(ctx, objectIds)
+	for _, object := range objects {
+		if object.Key == "data" {
+			u := &UserData{}
+			if err := json.Unmarshal([]byte(object.Value), u); err != nil {
+				logger.Error("Unable to read user_video_ads Unmarshal: %v", err)
+				return "ผิดพลาด", errors.New("can't find data id")
+			}
+			if int(u.NumDailyLogin) >= len(DailyRewardList.Reward) {
+				u.NumDailyLogin = 0
+			}
+			u.NumDailyLogin++
+			b, _ := json.Marshal(u)
+			objectsW := []*runtime.StorageWrite{
+				{
+					Collection:      "user",
+					Key:             "data",
+					UserID:          userId,
+					Value:           string(b),
+					PermissionRead:  1,
+					PermissionWrite: 1,
+				},
+			}
+			if _, err := nk.StorageWrite(ctx, objectsW); err != nil {
+				// Handle error.
+				logger.Error("User wallet StorageWrite: %v", err.Error())
+				return "ผิดพลาด", errors.New("can't save data id")
+			}
+			number := DailyRewardList.Reward[int(u.NumDailyLogin)]
+			content := map[string]int64{
+				"gold": int64(number),
+			}
+			metadata := map[string]interface{}{
+				"daily": u.NumDailyLogin,
+			}
+
+			if _, _, err := nk.WalletUpdate(ctx, userId, content, metadata, true); err != nil {
+				logger.Error("User wallet update error: %v", err.Error())
+				return "ผิดพลาด", nil
+			}
+			return strconv.Itoa(number), nil
+		}
+	}
+	return "ผิดพลาด", errors.New("can't find data id")
+}
+
+func CheckUserData(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, payload string) (string, error) {
+	userId, ok := ctx.Value(runtime.RUNTIME_CTX_USER_ID).(string)
+	if !ok {
+		// User ID not found in the context.
+		return "ผิดพลาด", errors.New("can't find user id")
+	}
+	objectIds := []*runtime.StorageRead{
+		{
+			Collection: "user",
+			Key:        "data",
+			UserID:     userId,
+		},
+	}
+	objects, _ := nk.StorageRead(ctx, objectIds)
+	for _, object := range objects {
+		if object.Key == "data" {
+			u := &UserData{}
+			if err := json.Unmarshal([]byte(object.Value), u); err != nil {
+				logger.Error("Unable to read user_video_ads Unmarshal: %v", err)
+				return "ผิดพลาด", errors.New("can't find data id")
+			}
+			b, _ := json.Marshal(u)
+			return string(b), nil
+		}
+	}
+	return "ผิดพลาด", errors.New("can't find data id")
+}
+
+func ClaimPlayReward(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, payload string) (string, error) {
+	userId, ok := ctx.Value(runtime.RUNTIME_CTX_USER_ID).(string)
+	if !ok {
+		// User ID not found in the context.
+		return "ผิดพลาด", errors.New("can't find user id")
+	}
+	objectIds := []*runtime.StorageRead{
+		{
+			Collection: "user",
+			Key:        "data",
+			UserID:     userId,
+		},
+	}
+	objects, _ := nk.StorageRead(ctx, objectIds)
+	for _, object := range objects {
+		if object.Key == "data" {
+			u := &UserData{}
+			if err := json.Unmarshal([]byte(object.Value), u); err != nil {
+				logger.Error("Unable to read user_video_ads Unmarshal: %v", err)
+				return "ผิดพลาด", errors.New("can't find data id")
+			}
+			gold := 0
+			for _, reward := range PlayRewardList.Reward {
+				if u.CurrentPlayRound >= reward.NumRound {
+					if u.CurrentPlayRewarded >= reward.NumRound {
+						continue
+					}
+					u.CurrentPlayRewarded = reward.NumRound
+					gold += int(reward.Gold)
+				}
+			}
+			content := map[string]int64{
+				"gold": int64(gold),
+			}
+			metadata := map[string]interface{}{
+				"round": u.CurrentPlayRewarded,
+			}
+			if _, _, err := nk.WalletUpdate(ctx, userId, content, metadata, true); err != nil {
+				logger.Error("User wallet update error: %v", err.Error())
+				return "ผิดพลาด", nil
+			}
+
+			if u.CurrentPlayRewarded >= PlayRewardList.Reward[len(PlayRewardList.Reward)-1].NumRound {
+				// auto reset
+				u.CurrentPlayRewarded = 0
+				u.CurrentPlayRound = 0
+			}
+
+			b, _ := json.Marshal(u)
+			objectsW := []*runtime.StorageWrite{
+				{
+					Collection:      "user",
+					Key:             "data",
+					UserID:          userId,
+					Value:           string(b),
+					PermissionRead:  1,
+					PermissionWrite: 1,
+				},
+			}
+			if _, err := nk.StorageWrite(ctx, objectsW); err != nil {
+				// Handle error.
+				logger.Error("User wallet StorageWrite: %v", err.Error())
+				return "ผิดพลาด", errors.New("can't save data id")
+			}
+			return string(b), nil
+		}
+	}
+	return "ผิดพลาด", errors.New("can't find data id")
+}
+
+func LoginRequestData(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, payload string) (string, error) {
+	b, _ := json.Marshal(LoginRequest{
+		DailyLoginReward: DailyRewardList,
+		PlayReward:       PlayRewardList,
+	})
+	return string(b), nil
+}
+
 func DateEqual(date1, date2 time.Time) bool {
 	y1, m1, d1 := date1.Date()
 	y2, m2, d2 := date2.Date()

@@ -84,6 +84,26 @@ func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 		return err
 	}
 
+	if err := initializer.RegisterRpc("request_check_user_data", systems.CheckUserData); err != nil {
+		logger.Error("Unable to register: %v", err)
+		return err
+	}
+
+	if err := initializer.RegisterRpc("request_claim_play_reward", systems.ClaimPlayReward); err != nil {
+		logger.Error("Unable to register: %v", err)
+		return err
+	}
+
+	if err := initializer.RegisterRpc("request_claim_daily_reward", systems.ClaimUserDailyReward); err != nil {
+		logger.Error("Unable to register: %v", err)
+		return err
+	}
+
+	if err := initializer.RegisterRpc("request_login_data", systems.LoginRequestData); err != nil {
+		logger.Error("Unable to register: %v", err)
+		return err
+	}
+
 	// init config
 
 	objects, err := nk.StorageRead(ctx, config.InitStorage)
@@ -107,6 +127,20 @@ func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 			if object.Key == config.VideoAdsKey {
 				if err := json.Unmarshal([]byte(object.Value), &systems.VedioAdsCong); err != nil {
 					logger.Error("Unable to read VedioAdsCong: %v", err)
+					continue
+				}
+			}
+
+			if object.Key == config.DailyRewardKey {
+				if err := json.Unmarshal([]byte(object.Value), &systems.DailyRewardList); err != nil {
+					logger.Error("Unable to read DailyRewardKey: %v", err)
+					continue
+				}
+			}
+
+			if object.Key == config.PlayRewardKey {
+				if err := json.Unmarshal([]byte(object.Value), &systems.PlayRewardList); err != nil {
+					logger.Error("Unable to read PlayRewardKey: %v", err)
 					continue
 				}
 			}

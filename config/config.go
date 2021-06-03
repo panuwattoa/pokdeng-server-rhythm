@@ -8,6 +8,8 @@ const (
 	SettingStorageKey       = "setting"
 	IAPStorageKey           = "iap-product"
 	VideoAdsKey             = "videoads"
+	DailyRewardKey          = "dailyreward"
+	PlayRewardKey           = "playReward"
 	NumUserCanBuySpecialIAP = 2
 )
 
