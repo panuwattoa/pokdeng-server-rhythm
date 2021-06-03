@@ -511,7 +511,7 @@ func ClaimUserDailyReward(ctx context.Context, logger runtime.Logger, db *sql.DB
 				logger.Error("Unable to read user_video_ads Unmarshal: %v", err)
 				return "ผิดพลาด", errors.New("can't find data id")
 			}
-			if int(u.NumDailyLogin) >= len(DailyRewardList.Reward) {
+			if int(u.NumDailyLogin) >= len(DailyRewardList.Reward)-1 {
 				u.NumDailyLogin = 0
 			}
 			t, _ := time.Parse(RFC3339FullDate, u.DateDailyLogin)
