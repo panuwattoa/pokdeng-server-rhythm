@@ -34,10 +34,12 @@ type UserVideoAds struct {
 }
 
 type UserData struct {
-	NumSpecialIAP       uint `json:"num_special_iap"`
-	NumDailyLogin       uint `json:"num_daily_login"`
-	CurrentPlayRound    uint `json:"current_play"`
-	CurrentPlayRewarded uint `json:"current_play_rewarded"`
+	NumSpecialIAP       uint   `json:"num_special_iap"`
+	NumDailyLogin       uint   `json:"num_daily_login"`
+	IsRecivedDailyToday bool   `json:"is_recived"`
+	DateDailyLogin      string `json:"Date"`
+	CurrentPlayRound    uint   `json:"current_play"`
+	CurrentPlayRewarded uint   `json:"current_play_rewarded"`
 }
 
 type LoginRequest struct {

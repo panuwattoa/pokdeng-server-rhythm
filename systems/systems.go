@@ -514,6 +514,15 @@ func ClaimUserDailyReward(ctx context.Context, logger runtime.Logger, db *sql.DB
 			if int(u.NumDailyLogin) >= len(DailyRewardList.Reward) {
 				u.NumDailyLogin = 0
 			}
+			t, err := time.Parse(RFC3339FullDate, u.DateDailyLogin)
+			if err != nil {
+				return "ผิดพลาด", errors.New("can't save data id")
+			}
+			if DateEqual(t, time.Now()) || u.IsRecivedDailyToday {
+				return "นายท่านดู ads ครบจำนวนแล้ว\nสามารถดูได้อีกวันถัดไป", errors.New("can't save data id")
+			}
+			u.DateDailyLogin = time.Now().Format(RFC3339FullDate)
+			u.IsRecivedDailyToday = true
 			u.NumDailyLogin++
 			b, _ := json.Marshal(u)
 			objectsW := []*runtime.StorageWrite{
@@ -541,7 +550,7 @@ func ClaimUserDailyReward(ctx context.Context, logger runtime.Logger, db *sql.DB
 
 			if _, _, err := nk.WalletUpdate(ctx, userId, content, metadata, true); err != nil {
 				logger.Error("User wallet update error: %v", err.Error())
-				return "ผิดพลาด", nil
+				return "ผิดพลาด", errors.New("can't save data id")
 			}
 			return string(b), nil
 		}
@@ -569,6 +578,13 @@ func CheckUserData(ctx context.Context, logger runtime.Logger, db *sql.DB, nk ru
 			if err := json.Unmarshal([]byte(object.Value), u); err != nil {
 				logger.Error("Unable to read user_video_ads Unmarshal: %v", err)
 				return "ผิดพลาด", errors.New("can't find data id")
+			}
+			t, err := time.Parse(RFC3339FullDate, u.DateDailyLogin)
+			if err != nil {
+				return "ผิดพลาด", errors.New("can't save data id")
+			}
+			if !DateEqual(t, time.Now()) {
+				u.IsRecivedDailyToday = false
 			}
 			b, _ := json.Marshal(u)
 			return string(b), nil

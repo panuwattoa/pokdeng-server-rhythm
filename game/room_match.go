@@ -7,6 +7,7 @@ import (
 	"math"
 	"math/rand"
 	"pokdeng-server/handler"
+	"pokdeng-server/systems"
 	"strconv"
 	"time"
 
@@ -934,10 +935,11 @@ func (room *PokdengRoom) saveResult(ctx context.Context, logger runtime.Logger, 
 	metadata := map[string]interface{}{
 		"game_result": "game_result",
 	}
+	var userIds []string
 	for _, player := range room.game.players {
 		chipGainsAfterTax := room.chipGainAfterTax(player, room.game.isDealerBot())
 		player.ChipGain = chipGainsAfterTax
-
+		userIds = append(userIds, player.UID)
 		content := map[string]int64{
 			"gold": player.ChipGain, // Add 1000 coins to the user's wallet.
 		}
@@ -952,10 +954,50 @@ func (room *PokdengRoom) saveResult(ctx context.Context, logger runtime.Logger, 
 		content := map[string]int64{
 			"gold": room.game.dealer.ChipGain, // Add 1000 coins to the user's wallet.
 		}
+		userIds = append(userIds, room.game.dealer.UID)
 		if _, _, err := nk.WalletUpdate(ctx, room.game.dealer.UID, content, metadata, true); err != nil {
 			logger.Error("User wallet update error: %v", err.Error())
 		}
 	}
+	for _, uid := range userIds {
+		go func(uid string) {
+			objectIds := []*runtime.StorageRead{
+				{
+					Collection: "user",
+					Key:        "data",
+					UserID:     uid,
+				},
+			}
+			objects, _ := nk.StorageRead(ctx, objectIds)
+			for _, object := range objects {
+				if object.Key == "data" {
+					u := &systems.UserData{}
+					if err := json.Unmarshal([]byte(object.Value), u); err != nil {
+						logger.Error("Unable to read user_video_ads Unmarshal: %v", err)
+						return
+					}
+
+					u.CurrentPlayRound++
+					b, _ := json.Marshal(u)
+					objectsW := []*runtime.StorageWrite{
+						{
+							Collection:      "user",
+							Key:             "data",
+							UserID:          uid,
+							Value:           string(b),
+							PermissionRead:  1,
+							PermissionWrite: 1,
+						},
+					}
+					if _, err := nk.StorageWrite(ctx, objectsW); err != nil {
+						// Handle error.
+						logger.Error("User wallet StorageWrite: %v", err.Error())
+					}
+				}
+			}
+		}(uid)
+	}
+
 }
 
 func (room *PokdengRoom) saveResultJub(ctx context.Context, logger runtime.Logger, nk runtime.NakamaModule) {
