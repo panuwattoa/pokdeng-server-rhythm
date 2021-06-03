@@ -132,6 +132,7 @@ func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 			}
 
 			if object.Key == config.DailyRewardKey {
+				logger.Debug("Load DailyRewardKey... ")
 				if err := json.Unmarshal([]byte(object.Value), &systems.DailyRewardList); err != nil {
 					logger.Error("Unable to read DailyRewardKey: %v", err)
 					continue
@@ -139,6 +140,7 @@ func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 			}
 
 			if object.Key == config.PlayRewardKey {
+				logger.Debug("Load PlayRewardKey... ")
 				if err := json.Unmarshal([]byte(object.Value), &systems.PlayRewardList); err != nil {
 					logger.Error("Unable to read PlayRewardKey: %v", err)
 					continue

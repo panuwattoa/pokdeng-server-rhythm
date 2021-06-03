@@ -648,10 +648,14 @@ func ClaimPlayReward(ctx context.Context, logger runtime.Logger, db *sql.DB, nk 
 }
 
 func LoginRequestData(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, payload string) (string, error) {
-	b, _ := json.Marshal(LoginRequest{
+	b, err := json.Marshal(LoginRequest{
 		DailyLoginReward: DailyRewardList,
 		PlayReward:       PlayRewardList,
 	})
+	if err != nil {
+		logger.Debug("err LoginRequestData %v", err)
+	}
+	logger.Debug(" PlayRewardList %v", PlayRewardList)
 	return string(b), nil
 }
 
