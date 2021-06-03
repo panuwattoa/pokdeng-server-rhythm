@@ -22,4 +22,12 @@ var InitStorage = []*runtime.StorageRead{
 		Collection: "configuration",
 		Key:        VideoAdsKey,
 	},
+	{
+		Collection: "dailyreward",
+		Key:        VideoAdsKey,
+	},
+	{
+		Collection: "playReward",
+		Key:        VideoAdsKey,
+	},
 }
