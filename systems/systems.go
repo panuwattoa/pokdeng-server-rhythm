@@ -577,7 +577,7 @@ func CheckUserData(ctx context.Context, logger runtime.Logger, db *sql.DB, nk ru
 			t, _ := time.Parse(RFC3339FullDate, u.DateDailyLogin)
 			if !DateEqual(t, time.Now()) {
 				u.IsRecivedDailyToday = false
-				if int(u.NumDailyLogin) >= len(DailyRewardList.Reward)-1 {
+				if int(u.NumDailyLogin) >= len(DailyRewardList.Reward) {
 					u.NumDailyLogin = 0
 				}
 				b, _ := json.Marshal(u)
