@@ -576,9 +576,25 @@ func CheckUserData(ctx context.Context, logger runtime.Logger, db *sql.DB, nk ru
 				logger.Error("Unable to read user_video_ads Unmarshal: %v", err)
 				return "ผิดพลาด", errors.New("can't find data id")
 			}
+
 			t, _ := time.Parse(RFC3339FullDate, u.DateDailyLogin)
 			if !DateEqual(t, time.Now()) {
 				u.IsRecivedDailyToday = false
+				b, _ := json.Marshal(u)
+				objectsW := []*runtime.StorageWrite{
+					{
+						Collection:      "user",
+						Key:             "data",
+						UserID:          userId,
+						Value:           string(b),
+						PermissionRead:  1,
+						PermissionWrite: 1,
+					},
+				}
+				if _, err := nk.StorageWrite(ctx, objectsW); err != nil {
+					// Handle error.
+					logger.Error("User wallet StorageWrite: %v", err.Error())
+				}
 			}
 			b, _ := json.Marshal(u)
 			return string(b), nil
