@@ -579,10 +579,7 @@ func CheckUserData(ctx context.Context, logger runtime.Logger, db *sql.DB, nk ru
 				logger.Error("Unable to read user_video_ads Unmarshal: %v", err)
 				return "ผิดพลาด", errors.New("can't find data id")
 			}
-			t, err := time.Parse(RFC3339FullDate, u.DateDailyLogin)
-			if err != nil {
-				return "ผิดพลาด", errors.New("can't save data id")
-			}
+			t, _ := time.Parse(RFC3339FullDate, u.DateDailyLogin)
 			if !DateEqual(t, time.Now()) {
 				u.IsRecivedDailyToday = false
 			}
