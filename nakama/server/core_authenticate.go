@@ -429,9 +429,7 @@ func AuthenticateFacebook(ctx context.Context, logger *zap.Logger, db *sql.DB, c
 		// No user account found, and creation is not allowed.
 		return "", "", false, false, status.Error(codes.NotFound, "User account not found.")
 	}
-if facebookProfile.Email == ""  {
-	facebookProfile.Email = userID := uuid.Must(uuid.NewV4()).String()
-}
+
 	// Create a new account.
 	userID := uuid.Must(uuid.NewV4()).String()
 	query = "INSERT INTO users (id, username, display_name, email, avatar_url, facebook_id, create_time, update_time) VALUES ($1, $2, $3, $4, $5, $6, now(), now())"
@@ -445,6 +443,21 @@ if facebookProfile.Email == ""  {
 				// A concurrent write has inserted this Facebook ID.
 				logger.Info("Did not insert new user as Facebook ID already exists.", zap.Error(err), zap.String("facebookID", facebookProfile.ID), zap.String("username", username), zap.Bool("create", create))
 				return "", "", false, false, status.Error(codes.Internal, "Error finding or creating user account.")
+			} else if strings.Contains(e.Message, "duplicate key value (email)=('')") {
+				// A concurrent write has inserted this Facebook ID.
+				// interim 
+				logger.Info("can't get email interim.", zap.Error(err), zap.String("facebookID", facebookProfile.ID), zap.String("username", username), zap.Bool("create", create))
+				userID := uuid.Must(uuid.NewV4()).String()
+				
+				result, err := db.ExecContext(ctx, query, userID, username, facebookProfile.Name, userID+"@interimmail.com", facebookProfile.Picture, facebookProfile.ID)
+				if err == nil {
+					if rowsAffectedCount, _ := result.RowsAffected(); rowsAffectedCount != 1 {
+						logger.Error("Did not insert new user.", zap.Int64("rows_affected", rowsAffectedCount))
+						return "", "", false, false, status.Error(codes.Internal, "Error finding or creating user account.")
+					}
+				
+					return userID, username, true, importFriendsPossible, nil
+				}
 			}
 		}
 		logger.Error("Cannot find or create user with Facebook ID.", zap.Error(err), zap.String("facebookID", facebookProfile.ID), zap.String("username", username), zap.Bool("create", create))
