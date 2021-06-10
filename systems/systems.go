@@ -104,6 +104,46 @@ func InitializeFacebookUser(ctx context.Context, logger runtime.Logger, db *sql.
 	return nil
 }
 
+func InitializeApplekUser(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, out *api.Session, in *api.AuthenticateAppleRequest) error {
+	if out.Created {
+		// Only run this logic if the account that has authenticated is new.
+		userID, ok := ctx.Value(runtime.RUNTIME_CTX_USER_ID).(string)
+		if !ok {
+			return errors.New("Invalid context")
+		}
+		changeset := map[string]int64{
+			"gold": 10000, // Add 10 coins to the user's wallet.
+		}
+		metadata := map[string]interface{}{
+			"newuser": 10000,
+		}
+		if _, _, err := nk.WalletUpdate(ctx, userID, changeset, metadata, true); err != nil {
+			// Handle error.
+			logger.Error("Unable to WalletUpdate new user : %v", err)
+		}
+		// write
+		userInit := UserData{
+			NumSpecialIAP: 1,
+		}
+		b, _ := json.Marshal(userInit)
+		objectsW := []*runtime.StorageWrite{
+			{
+				Collection:      "user",
+				Key:             "data",
+				UserID:          userID,
+				Value:           string(b),
+				PermissionRead:  1,
+				PermissionWrite: 1,
+			},
+		}
+		if _, err := nk.StorageWrite(ctx, objectsW); err != nil {
+			// Handle error.
+			logger.Error("User wallet StorageWrite: %v", err.Error())
+		}
+	}
+	return nil
+}
+
 // get match list
 func GetRooms(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, payload string) (string, error) {
 	var input map[string]interface{}

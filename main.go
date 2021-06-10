@@ -79,6 +79,11 @@ func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 		return err
 	}
 
+	if err := initializer.RegisterAfterAuthenticateApple(systems.InitializeApplekUser); err != nil {
+		logger.Error("Unable to register: %v", err)
+		return err
+	}
+
 	if err := initializer.RegisterRpc("request_check_can_buy_special_iap", systems.CheckUserCanBuySpecialIAP); err != nil {
 		logger.Error("Unable to register: %v", err)
 		return err
