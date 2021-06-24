@@ -58,7 +58,9 @@ console:
 #         max_tickets: 2
 #         interval_sec: 15
 #         max_intervals: 3
-
+social:
+    apple:
+        bundle_id: "com.rhythmstudio.tpokdeng"
 iap:
     apple:
         shared_password: "e7405958fed0451aafdc11c7ec32edad"
